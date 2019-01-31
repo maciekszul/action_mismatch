@@ -100,17 +100,30 @@ ball = visual.Circle(
 # exp
 x, y = joy.getX(), -joy.getY()
 theta0, radius = ct.cart2pol(x, y, units="rad")
+theta_start = theta0
+check = False
+
 event.clearEvents()
+
 while not event.getKeys(keyList=['q'], timeStamped=False):
+    if event.getKeys(keyList=['i'], timeStamped=False):
+        check = True
+    elif event.getKeys(keyList=['c'], timeStamped=False):
+        check = False
     x, y = joy.getX(), -joy.getY()
     theta, radius = ct.cart2pol(x, y, units="rad")
     theta_delta = theta-theta0
     text_stim.text = "X:{}\nY: {}\nANG: {}\nRAD: {}\ndelta ANG: {}".format(x,y, theta+np.pi, radius, theta_delta)
     text_stim.draw()
-    ball.pos = ct.pol2cart(theta, 10, units="rad")
+    if check:
+        theta_start = theta_start - (theta_delta)
+    else:
+        theta_start = theta_start + (theta_delta)
+    ball.pos = ct.pol2cart(theta_start, 10, units="rad")
     ball.draw()
     win.flip()
     theta0 = theta
+
 
 
 win.close()
