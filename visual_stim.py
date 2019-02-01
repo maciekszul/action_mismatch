@@ -72,40 +72,61 @@ timebar_foreground = visual.ShapeStim(
     fillColor="red",
 )
 
+wedge_rad = [0, 25]
+wedge_size = 20
 
-
-wedge1 = visual.RadialStim(
+wedge0 = visual.RadialStim(
     win, 
     color="gray", 
-    size=20,
-    visibleWedge=[0, 45], 
+    size=wedge_size,
+    visibleWedge=wedge_rad, 
     radialCycles=0, 
     angularCycles=1, 
     interpolate=False,
     autoLog=False,
     units="deg"
     )
-# wedge2 = visual.RadialStim(
-#     win, 
-#     tex='sqrXsqr', 
-#     color=-1, 
-#     size=15,
-#     visibleWedge=[0, 45], 
-#     radialCycles=6, 
-#     angularCycles=8, 
-#     interpolate=False,
-#     autoLog=False,
-#     units="deg"
-#     )
 
+wedge1 = visual.RadialStim(
+    win, 
+    tex="sqrXsqr",
+    color=1, 
+    size=wedge_size,
+    visibleWedge=wedge_rad, 
+    radialCycles=4, 
+    angularCycles=8, 
+    interpolate=False,
+    autoLog=False
+)
+wedge2 = visual.RadialStim(
+    win, 
+    tex='sqrXsqr', 
+    color=-1, 
+    size=wedge_size,
+    visibleWedge=wedge_rad, 
+    radialCycles=4, 
+    angularCycles=8, 
+    interpolate=False,
+    autoLog=False
+)
+
+global_clock = core.Clock()
 
 # exp
-timer_dur = 1.2
-timer = core.CountdownTimer(timer_dur)
 
+flash_period = 0.1
+timer_dur = 5
+timer = core.CountdownTimer(timer_dur)
 while timer.getTime() > 0:
-    wedge1.ori += 15
-    wedge1.draw()
+    # t = global_clock.getTime()
+    # if t % flash_period < flash_period / 2.0:  # more accurate to count frames
+    #     stim = wedge1
+    # else:
+    #     stim = wedge2
+    # stim.ori += 3
+    # stim.draw()
+    wedge0.ori += 3
+    wedge0.draw()
     inner.draw()
     timebar_background.draw()
     time_prop = 1 - (timer.getTime() / timer_dur)
