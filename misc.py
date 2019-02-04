@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 
 def oddball_sequence(trial_no, prop_dev):
@@ -12,3 +13,7 @@ def oddball_sequence(trial_no, prop_dev):
     np.random.shuffle(seq)
     return seq
 
+
+def mk_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
