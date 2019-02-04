@@ -118,15 +118,15 @@ flash_period = 0.1
 timer_dur = 5
 timer = core.CountdownTimer(timer_dur)
 while timer.getTime() > 0:
-    # t = global_clock.getTime()
-    # if t % flash_period < flash_period / 2.0:  # more accurate to count frames
-    #     stim = wedge1
-    # else:
-    #     stim = wedge2
-    # stim.ori += 3
-    # stim.draw()
-    wedge0.ori += 3
-    wedge0.draw()
+    t = global_clock.getTime()
+    if t % flash_period < flash_period / 2.0:  # more accurate to count frames
+        stim = wedge1
+    else:
+        stim = wedge2
+    stim.ori += 3
+    stim.draw()
+    # wedge0.ori += 3
+    # wedge0.draw()
     inner.draw()
     timebar_background.draw()
     time_prop = 1 - (timer.getTime() / timer_dur)
