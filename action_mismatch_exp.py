@@ -71,6 +71,7 @@ subj_ID = str(subject).zfill(4)
 
 # monitor settings
 x230 = (28, 56, (1366, 768))
+lab = (53, 65, (1920, 1080))
 
 width, dist, res = x230
 
