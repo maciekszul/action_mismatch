@@ -7,7 +7,6 @@ from psychopy import clock
 from psychopy.hardware import joystick
 import psychopy.tools.coordinatetools as ct
 import os.path as op
-# import arrow
 import numpy as np
 import pandas as pd
 import misc
@@ -33,9 +32,6 @@ no_chunks = 1
 no_elem = 10
 prop_dev = 0.2
 
-
-# time = arrow.now()
-# timestamp = time.timestamp
 timestamp = core.getAbsTime()
 
 # time bar background shape
