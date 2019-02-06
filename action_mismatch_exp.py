@@ -17,7 +17,7 @@ background_color = "#c7c7c7"
 exp_gray = "#c2c2c2"
 # exp_gray = "#b8b8b8"
 
-wedge_rad = [-22.5, 22.5]
+wedge_rad = [0, 45]
 wedge_size = 15
 
 fix_time = 0.5
@@ -73,7 +73,7 @@ subj_ID = str(subject).zfill(4)
 x230 = (28, 56, (1366, 768))
 lab = (53, 65, (1920, 1080))
 
-width, dist, res = x230
+width, dist, res = lab
 
 mon = monitors.Monitor("default")
 mon.setWidth(width)
@@ -110,6 +110,8 @@ columns = [
     "gender",
     "trial",
     "exp_type",
+    "movement_dir",
+    "obs_dir_mod",
     "fix_onset",
     "rot_onset",
     "blink_onset",
@@ -307,6 +309,7 @@ for trial, stim_mode in enumerate(exp_sequence):
         timebar_foreground.draw()
         win.flip()
         theta0 = theta
+        # print(theta)
     
     exp_blink_onset = exp_clock.getTime()
 
@@ -323,21 +326,20 @@ for trial, stim_mode in enumerate(exp_sequence):
     blink.start(blink_time)
     # operations during blink
     movement_summary = np.sign(np.average(np.sign(movement_dir)))
-
-    blink.complete()
-
-    exp_obs_onset = exp_clock.getTime()
-    wedge1.ori = theta
-    wedge2.ori = theta
+    wedge1.ori = np.rad2deg(theta)
+    wedge2.ori = np.rad2deg(theta)
     wedge1.draw()
     wedge2.draw()
     inner.draw()
     timebar_background.draw()
+    blink.complete()
+
+    exp_obs_onset = exp_clock.getTime()
     win.flip()
     for frame in np.arange(framerate_r * obs_time - 1):
         wedge1.ori += ((obs_rot_rate * movement_summary) * stim_mode)
         wedge2.ori += ((obs_rot_rate * movement_summary) * stim_mode)
-        if frame % 2 == 0:
+        if frame % 3 == 0:
             stim = wedge1
         else:
             stim = wedge2
@@ -360,6 +362,8 @@ for trial, stim_mode in enumerate(exp_sequence):
     data_dict["gender"].append(gender)
     data_dict["trial"].append(trial)
     data_dict["exp_type"].append(exp_type)
+    data_dict["movement_dir"].append(np.average(np.sign(movement_dir)))
+    data_dict["obs_dir_mod"].append(stim_mode)
     
     data_dict["fix_onset"].append(exp_fix_onset)
     data_dict["rot_onset"].append(exp_rot_onset)
@@ -376,8 +380,9 @@ for trial, stim_mode in enumerate(exp_sequence):
     print(ITI.complete())
 
     if event.getKeys(keyList=['q'], timeStamped=False):
-        win.close()
-        core.quit()
+    	break
+        # win.close()
+        # core.quit()
 
 
 data_filename = "{}_{}.csv".format(
