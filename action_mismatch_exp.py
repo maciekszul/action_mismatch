@@ -4,6 +4,8 @@ from psychopy import monitors
 from psychopy import gui
 from psychopy import event
 from psychopy import clock
+from psychopy.hardware import joystick
+import psychopy.tools.coordinatetools as ct
 import os.path as op
 import arrow
 import numpy as np
@@ -13,20 +15,24 @@ import misc
 
 # exp settings
 background_color = "#c7c7c7"
-# exp_gray = "#c2c2c2"
-exp_gray = "#b8b8b8"
+exp_gray = "#c2c2c2"
+# exp_gray = "#b8b8b8"
 
-wedge_rad = [0, 45]
+wedge_rad = [-22.5, 22.5]
 wedge_size = 15
 
 fix_time = 0.5
-rot_time = 1.2
+rot_time = 1.5
 blink_time = 0.1
 obs_time = 0.7
 ITI_bounds = (0.5, 0.9)
 
-trial_no = 2
-prop_dev = 0.5
+rotation_total_angle = 360
+
+no_chunks = 1
+no_elem = 10
+prop_dev = 0.2
+
 
 time = arrow.now()
 timestamp = time.timestamp
@@ -96,8 +102,8 @@ framerate = win.getActualFrameRate(
 framerate_r = np.round(framerate)
 
 # hardware settings
-# joyN = joystick.getNumJoysticks()
-# joy = joystick.Joystick(0)
+joyN = joystick.getNumJoysticks()
+joy = joystick.Joystick(0)
 
 # data logging settings
 columns = [
@@ -148,7 +154,7 @@ timebar_foreground = visual.ShapeStim(
 try:
     wedge0 = visual.RadialStim(
         win,
-        tex="sin",
+        tex="sqr",
         contrast=-1,
         color=exp_gray,
         size=wedge_size,
@@ -186,6 +192,10 @@ try:
 
 except (RuntimeError, TypeError, NameError):
     pass
+
+obs_rot_rate = rotation_total_angle / (framerate_r * obs_time)
+
+print(obs_rot_rate)
 
 blank = visual.TextStim(
     win,
@@ -249,22 +259,41 @@ def draw_cue():
     line2.draw()
     circle1.draw()
 
-exp_sequence = misc.oddball_sequence(trial_no, prop_dev)
+exp_sequence = misc.oddball_sequence(no_chunks, no_elem, prop_dev)
 
 
 # EXPERIMENT'
+blank.draw()
+win.flip()
+core.wait(2)
+
 exp_clock = clock.MonotonicClock()
 exp_start = exp_clock.getTime()
 for trial, stim_mode in enumerate(exp_sequence):
     exp_fix_onset = exp_clock.getTime()
     fix = clock.StaticPeriod(screenHz=framerate_r)
+    draw_cue()
+    win.flip()
     fix.start(fix_time)
     # operations during fix
     fix.complete()
-    
+
     exp_rot_onset = exp_clock.getTime()
+
+    # first readout
+    x, y = joy.getX(), -joy.getY()
+    theta0, radius = ct.cart2pol(x, y, units="rad")
+
+    movement_dir = []
     for frame in np.arange((framerate_r * rot_time)):
-        wedge0.ori += 9
+        x, y = joy.getX(), joy.getY()
+    
+        theta, radius = ct.cart2pol(x, y, units="rad")
+            
+        theta_delta = theta-theta0
+        movement_dir.append(theta_delta)
+        if radius > 0.2:
+            wedge0.ori = np.rad2deg(theta)
         wedge0.draw()
 
         inner.draw()
@@ -279,25 +308,41 @@ for trial, stim_mode in enumerate(exp_sequence):
         timebar_foreground.vertices = tbar_shape
         timebar_foreground.draw()
         win.flip()
+        theta0 = theta
     
     exp_blink_onset = exp_clock.getTime()
-    blank.draw()
-    win.flip()
+
+    while True:
+        x, y = joy.getX(), joy.getY()
+        t, radius = ct.cart2pol(x, y, units="rad")
+        if radius > 0.1:
+            blank.draw()
+            win.flip()
+        else:
+            break
 
     blink = clock.StaticPeriod(screenHz=framerate_r)
     blink.start(blink_time)
     # operations during blink
+    movement_summary = np.sign(np.average(np.sign(movement_dir)))
+
     blink.complete()
 
     exp_obs_onset = exp_clock.getTime()
-    for frame in np.arange(framerate_r * obs_time):
-        wedge1.ori += (9 * stim_mode)
-        wedge2.ori += (9 * stim_mode)
+    wedge1.ori = theta
+    wedge2.ori = theta
+    wedge1.draw()
+    wedge2.draw()
+    inner.draw()
+    timebar_background.draw()
+    win.flip()
+    for frame in np.arange(framerate_r * obs_time - 1):
+        wedge1.ori += ((obs_rot_rate * movement_summary) * stim_mode)
+        wedge2.ori += ((obs_rot_rate * movement_summary) * stim_mode)
         if frame % 2 == 0:
             stim = wedge1
         else:
             stim = wedge2
-        
         stim.draw()
         inner.draw()
         timebar_background.draw()
@@ -331,6 +376,10 @@ for trial, stim_mode in enumerate(exp_sequence):
     data_dict["ITI_dur"].append(ITI_time)
     
     print(ITI.complete())
+
+    if event.getKeys(keyList=['q'], timeStamped=False):
+        win.close()
+        core.quit()
 
 
 data_filename = "{}_{}.csv".format(
