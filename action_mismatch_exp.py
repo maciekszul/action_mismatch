@@ -17,13 +17,15 @@ background_color = "#c7c7c7"
 exp_gray = "#c2c2c2"
 # exp_gray = "#b8b8b8"
 
-wedge_rad = [0, 45]
+wedge_rad = [0, 270]
 wedge_size = 15
 
 fix_time = 0.5
 rot_time = 1.5
 blink_time = 0.1
-obs_time = 0.7
+obs_time = 1
+
+
 ITI_bounds = (0.5, 0.9)
 
 rotation_total_angle = 360
@@ -154,7 +156,7 @@ timebar_foreground = visual.ShapeStim(
 try:
     wedge0 = visual.RadialStim(
         win,
-        tex="sqr",
+        tex="sin",
         contrast=-1,
         color=exp_gray,
         size=wedge_size,
@@ -172,8 +174,8 @@ try:
         color=1, 
         size=wedge_size,
         visibleWedge=wedge_rad, 
-        radialCycles=4, 
-        angularCycles=8, 
+        radialCycles=8, 
+        angularCycles=10, 
         interpolate=False,
         autoLog=False
     )
@@ -184,8 +186,8 @@ try:
         color=-1, 
         size=wedge_size,
         visibleWedge=wedge_rad, 
-        radialCycles=4, 
-        angularCycles=8, 
+        radialCycles=8, 
+        angularCycles=10, 
         interpolate=False,
         autoLog=False
     )
@@ -336,13 +338,24 @@ for trial, stim_mode in enumerate(exp_sequence):
 
     exp_obs_onset = exp_clock.getTime()
     win.flip()
+
+    stim = wedge1
     for frame in np.arange(framerate_r * obs_time - 1):
         wedge1.ori += ((obs_rot_rate * movement_summary) * stim_mode)
         wedge2.ori += ((obs_rot_rate * movement_summary) * stim_mode)
-        if frame % 3 == 0:
-            stim = wedge1
-        else:
-            stim = wedge2
+
+        
+        if frame % int(np.round(framerate_r / 8)) == 0:
+            print("flip")
+            if stim == wedge1:
+                stim = wedge2
+            else: 
+                stim = wedge1
+
+        # if frame % 2 == 0:
+        #     stim = wedge1
+        # else:
+        #     stim = wedge2
         stim.draw()
         inner.draw()
         timebar_background.draw()
@@ -380,7 +393,7 @@ for trial, stim_mode in enumerate(exp_sequence):
     print(ITI.complete())
 
     if event.getKeys(keyList=['q'], timeStamped=False):
-    	break
+        break
         # win.close()
         # core.quit()
 
