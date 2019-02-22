@@ -27,7 +27,7 @@ def tile_shuffle(no_elem, prop_dev):
     """
     dev_no = int(no_elem * prop_dev)
     reg_no = no_elem - dev_no
-    chunk = np.hstack([np.tile(1, reg_no), np.tile(-1, dev_no)])
+    chunk = np.hstack([np.tile(1, reg_no - 1), np.array([0]), np.tile(-1, dev_no)])
     np.random.shuffle(chunk)
     while consecutive_elements(chunk, -1):
         np.random.shuffle(chunk)

@@ -17,7 +17,7 @@ background_color = "#c7c7c7"
 exp_gray = "#c2c2c2"
 # exp_gray = "#b8b8b8"
 
-wedge_rad = [0, 270]
+wedge_rad = [0, 90]
 wedge_size = 15
 
 fix_time = 0.5
@@ -25,6 +25,7 @@ rot_time = 1.5
 blink_time = 0.1
 obs_time = 1
 
+flickering_freq = 8
 
 ITI_bounds = (0.5, 0.9)
 
@@ -37,8 +38,8 @@ prop_dev = 0.2
 timestamp = core.getAbsTime()
 
 # time bar background shape
-bar_h = 2
-bar_w = bar_h/10
+bar_h = 1.7
+bar_w = bar_h/4
 bar_shape = [
     [-(bar_w/2), -(bar_h/2)],
     [-(bar_w/2), (bar_h/2)],
@@ -47,8 +48,8 @@ bar_shape = [
 ]
 
 # time bar
-tbar_h = 2
-tbar_w = 0.2
+tbar_h = 1.7
+tbar_w = tbar_h/4
 tbar_shape = bar_shape
 
 # prompt
@@ -100,6 +101,7 @@ framerate = win.getActualFrameRate(
 )
 
 framerate_r = np.round(framerate)
+frame_spacing = int(np.round(framerate_r / flickering_freq))
 
 # hardware settings
 joyN = joystick.getNumJoysticks()
@@ -131,10 +133,25 @@ data_dict = {i: [] for i in columns}
 # stim
 inner = visual.Circle(
     win, 
-    bar_h/2, 
+    1, 
     edges=100, 
     fillColor=background_color, 
     lineColor=background_color
+)
+
+outer = visual.Circle(
+    win, 
+    wedge_size/2, 
+    edges=100, 
+    fillColor=exp_gray, 
+    lineColor=background_color
+)
+
+arrow = visual.ImageStim(
+    win,
+    image="arrow.png",
+    size=[2,2],
+    ori=0
 )
 
 timebar_background = visual.ShapeStim(
@@ -150,22 +167,22 @@ timebar_foreground = visual.ShapeStim(
     vertices=tbar_shape,
     units="deg",
     closeShape=True,
-    fillColor="red"
+    fillColor="red",
+    lineColor="red"
 )
 
 try:
-    wedge0 = visual.RadialStim(
+    wedge_cover = visual.RadialStim(
         win,
-        tex="sin",
+        tex="sqr",
         contrast=-1,
-        color=exp_gray,
+        color=background_color,
         size=wedge_size,
-        visibleWedge=wedge_rad, 
+        visibleWedge=[0, 90], 
         radialCycles=1, 
         angularCycles=1, 
         interpolate=False,
-        autoLog=False,
-        units="deg"
+        autoLog=False
     )
 
     wedge1 = visual.RadialStim(
@@ -173,9 +190,9 @@ try:
         tex="sqrXsqr",
         color=1, 
         size=wedge_size,
-        visibleWedge=wedge_rad, 
+        visibleWedge=[0,360], 
         radialCycles=8, 
-        angularCycles=10, 
+        angularCycles=30, 
         interpolate=False,
         autoLog=False
     )
@@ -185,9 +202,9 @@ try:
         tex="sqrXsqr", 
         color=-1, 
         size=wedge_size,
-        visibleWedge=wedge_rad, 
+        visibleWedge=[0,360], 
         radialCycles=8, 
-        angularCycles=10, 
+        angularCycles=30, 
         interpolate=False,
         autoLog=False
     )
@@ -294,10 +311,11 @@ for trial, stim_mode in enumerate(exp_sequence):
             
         theta_delta = theta-theta0
         movement_dir.append(theta_delta)
-        if radius > 0.2:
-            wedge0.ori = np.rad2deg(theta)
-        wedge0.draw()
+        if radius > 0.2 and theta < 10:
+            wedge_cover.ori = np.rad2deg(theta)
 
+        outer.draw()
+        wedge_cover.draw()
         inner.draw()
         timebar_background.draw()
         time_prop = 1 - frame/(framerate_r * rot_time)
@@ -309,6 +327,8 @@ for trial, stim_mode in enumerate(exp_sequence):
         ]
         timebar_foreground.vertices = tbar_shape
         timebar_foreground.draw()
+        if stim_mode == 0:
+            arrow.draw()
         win.flip()
         theta0 = theta
         # print(theta)
@@ -327,43 +347,40 @@ for trial, stim_mode in enumerate(exp_sequence):
     blink = clock.StaticPeriod(screenHz=framerate_r)
     blink.start(blink_time)
     # operations during blink
-    movement_summary = np.sign(np.average(np.sign(movement_dir)))
-    wedge1.ori = np.rad2deg(theta)
-    wedge2.ori = np.rad2deg(theta)
-    wedge1.draw()
-    wedge2.draw()
-    inner.draw()
-    timebar_background.draw()
+    if stim_mode != 0:
+        movement_summary = np.sign(np.average(np.sign(movement_dir)))
+        wedge1.ori = np.rad2deg(theta)
+        wedge2.ori = np.rad2deg(theta)
+        wedge1.draw()
+        wedge2.draw()
+        inner.draw()
+        timebar_background.draw()
     blink.complete()
 
     exp_obs_onset = exp_clock.getTime()
-    win.flip()
-
-    stim = wedge1
-    for frame in np.arange(framerate_r * obs_time - 1):
-        wedge1.ori += ((obs_rot_rate * movement_summary) * stim_mode)
-        wedge2.ori += ((obs_rot_rate * movement_summary) * stim_mode)
-
-        
-        if frame % int(np.round(framerate_r / 8)) == 0:
-            print("flip")
-            if stim == wedge1:
-                stim = wedge2
-            else: 
-                stim = wedge1
-
-        # if frame % 2 == 0:
-        #     stim = wedge1
-        # else:
-        #     stim = wedge2
-        stim.draw()
-        inner.draw()
-        timebar_background.draw()
-        win.flip()
     
-    blank.draw()
-    win.flip()
+    if stim_mode != 0:
+        win.flip()
 
+        stim = wedge1
+        for frame in np.arange(framerate_r * obs_time - 1):
+            wedge_cover.ori += ((obs_rot_rate * movement_summary) * stim_mode)
+
+            if frame % frame_spacing == 0:
+                if stim == wedge1:
+                    stim = wedge2
+                else: 
+                    stim = wedge1
+
+            stim.draw()
+            wedge_cover.draw()
+            inner.draw()
+            timebar_background.draw()
+            win.flip()
+        blank.draw()
+        win.flip()
+    else:
+        pass
     exp_iti_onset = exp_clock.getTime()
     ITI = clock.StaticPeriod(screenHz=framerate_r)
     ITI_time = np.random.uniform(low=ITI_bounds[0], high=ITI_bounds[1])

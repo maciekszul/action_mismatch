@@ -121,6 +121,8 @@ while not event.getKeys(keyList=['q'], timeStamped=False):
     theta, radius = ct.cart2pol(x, y, units="rad")
     theta_delta = theta-theta0
     
+    if radius > 0.25 and np.abs(theta) < 2:
+        theta_delta = theta-theta0
     if check:
         theta_start = theta_start - (theta_delta ) # oddball conditions
     else:
