@@ -1,7 +1,9 @@
 # usage specific
 data/
+.vscode/
 *.csv
 *.pkl
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -107,3 +109,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+.vscode/settings.json
