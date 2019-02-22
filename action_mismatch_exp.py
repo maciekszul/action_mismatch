@@ -303,13 +303,22 @@ exp_clock = clock.MonotonicClock()
 exp_start = exp_clock.getTime()
 for trial, stim_mode in enumerate(exp_sequence):
     exp_fix_onset = exp_clock.getTime()
+
+    while True:
+        x, y = joy.getX(), joy.getY()
+        t, radius = ct.cart2pol(x, y, units="rad")
+        if radius > 0.1:
+            blank.draw()
+            win.flip()
+        else:
+            break
+    
     fix = clock.StaticPeriod(screenHz=framerate_r)
     draw_cue()
     win.flip()
     fix.start(fix_time)
     # operations during fix
     fix.complete()
-
     exp_rot_onset = exp_clock.getTime()
 
     # first readout
@@ -317,9 +326,9 @@ for trial, stim_mode in enumerate(exp_sequence):
     theta0, radius = ct.cart2pol(x, y, units="rad")
 
     movement_dir = []
-    x_trial = []
-    y_trial = []
-    t_trial = []
+    x_trial = [x]
+    y_trial = [y]
+    t_trial = [exp_rot_onset]
     for frame in np.arange((framerate_r * rot_time)):
         x, y = joy.getX(), joy.getY()
         x_trial.append(x)
@@ -430,7 +439,7 @@ for trial, stim_mode in enumerate(exp_sequence):
         op.join(subj_dir, data_filename)
     )
    
-    joystick_output =  np.hstack([np.array(x_trial), np.array(y_trial), np.array(y_trial)])
+    joystick_output =  np.vstack([np.array(x_trial), np.array(y_trial), np.array(t_trial)])
     jo_filename = "ses{}_{}_trial{}_{}.npy".format(
         session,
         subj_ID,
