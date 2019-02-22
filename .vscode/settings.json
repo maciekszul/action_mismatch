@@ -2,5 +2,5 @@
     "python.pythonPath": "C:\\Users\\maciek\\Miniconda3\\envs\\psypy\\python.exe",
     "python.linting.pylintEnabled": false,
     "python.linting.pep8Enabled": false,
-    "python.linting.enabled": false
+    "python.linting.enabled": true
 }

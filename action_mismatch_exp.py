@@ -11,6 +11,41 @@ import numpy as np
 import pandas as pd
 import misc
 
+# prompt
+exp_info = {
+    "ID": 0,
+    "age": 0,
+    "gender (m/f/o)": "o",
+    "exp type (prc/exp)": "exp",
+    "session": 1
+}
+
+prompt = gui.DlgFromDict(
+    dictionary=exp_info, 
+    title="Action Preception Mismatch"
+)
+
+subject = exp_info["ID"]
+age = exp_info["age"]
+gender = exp_info["gender (m/f/o)"]
+exp_type = exp_info["exp type (prc/exp)"]
+session = exp_info["session"]
+
+subj_ID = str(subject).zfill(4)
+
+timestamp = core.getAbsTime()
+
+subj_dir = op.join("data/{}".format(subj_ID))
+misc.mk_dir(subj_dir)
+
+data_filename = "ses{}_{}_{}.csv".format(
+    session,
+    subj_ID,
+    timestamp
+)
+
+joy_dir = op.join(subj_dir, data_filename[:-4])
+misc.mk_dir(joy_dir)
 
 # exp settings
 background_color = "#c7c7c7"
@@ -35,8 +70,6 @@ no_chunks = 1
 no_elem = 10
 prop_dev = 0.2
 
-timestamp = core.getAbsTime()
-
 # time bar background shape
 bar_h = 1.7
 bar_w = bar_h/4
@@ -51,26 +84,6 @@ bar_shape = [
 tbar_h = 1.7
 tbar_w = tbar_h/4
 tbar_shape = bar_shape
-
-# prompt
-exp_info = {
-    "ID": 0,
-    "age": 0,
-    "gender (m/f/o)": "o",
-    "exp type (prc/exp)": "exp",
-}
-
-prompt = gui.DlgFromDict(
-    dictionary=exp_info, 
-    title="Action Preception Mismatch"
-)
-
-subject = exp_info["ID"]
-age = exp_info["age"]
-gender = exp_info["gender (m/f/o)"]
-exp_type = exp_info["exp type (prc/exp)"]
-
-subj_ID = str(subject).zfill(4)
 
 # monitor settings
 x230 = (28, 56, (1366, 768))
@@ -304,9 +317,14 @@ for trial, stim_mode in enumerate(exp_sequence):
     theta0, radius = ct.cart2pol(x, y, units="rad")
 
     movement_dir = []
+    x_trial = []
+    y_trial = []
+    t_trial = []
     for frame in np.arange((framerate_r * rot_time)):
         x, y = joy.getX(), joy.getY()
-    
+        x_trial.append(x)
+        y_trial.append(y)
+        t_trial.append(exp_clock.getTime())
         theta, radius = ct.cart2pol(x, y, units="rad")
             
         theta_delta = theta-theta0
@@ -406,6 +424,23 @@ for trial, stim_mode in enumerate(exp_sequence):
     data_dict["blink_dur"].append(exp_obs_onset - exp_blink_onset)
     data_dict["obs_dur"].append(exp_iti_onset - exp_obs_onset)
     data_dict["ITI_dur"].append(ITI_time)
+
+    data_DF = pd.DataFrame(data_dict)
+    data_DF.to_csv(
+        op.join(subj_dir, data_filename)
+    )
+   
+    joystick_output =  np.hstack([np.array(x_trial), np.array(y_trial), np.array(y_trial)])
+    jo_filename = "ses{}_{}_trial{}_{}.npy".format(
+        session,
+        subj_ID,
+        str(trial).zfill(4),
+        timestamp
+    )
+    np.save(
+        op.join(joy_dir,jo_filename), 
+        joystick_output
+    )
     
     print(ITI.complete())
 
@@ -413,20 +448,6 @@ for trial, stim_mode in enumerate(exp_sequence):
         break
         # win.close()
         # core.quit()
-
-
-data_filename = "{}_{}.csv".format(
-    subj_ID,
-    timestamp
-)
-
-subj_dir = op.join("data/{}".format(subj_ID))
-misc.mk_dir(subj_dir)
-
-data_DF = pd.DataFrame(data_dict)
-data_DF.to_csv(
-    op.join(subj_dir, data_filename)
-)
 
 win.close()
 core.quit()

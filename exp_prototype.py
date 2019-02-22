@@ -6,7 +6,7 @@ from psychopy import monitors
 from psychopy import gui
 from psychopy import event
 import psychopy.tools.coordinatetools as ct
-from psychopy.iohub import launchHubServer
+# from psychopy.iohub import launchHubServer
 from psychopy.hardware import joystick
 import numpy as np
 
@@ -121,7 +121,7 @@ while not event.getKeys(keyList=['q'], timeStamped=False):
     theta, radius = ct.cart2pol(x, y, units="rad")
     theta_delta = theta-theta0
     
-    if radius > 0.25 and np.abs(theta) < 2:
+    if radius > 0.25 and np.abs(theta_delta) < 1:
         theta_delta = theta-theta0
     if check:
         theta_start = theta_start - (theta_delta ) # oddball conditions
@@ -133,7 +133,7 @@ while not event.getKeys(keyList=['q'], timeStamped=False):
 
     outer.draw()
 
-    text_stim.text = "X:{}\nY: {}\nANG: {}\nRAD: {}\ndelta ANG: {}".format(x,y, theta+np.pi, radius, theta_delta)
+    text_stim.text = "X:{0}\nY: {1}\nANG: {2}\nRAD: {3}\ndelta ANG: {4}".format(x,y, theta+np.pi, radius, theta_delta)
     text_stim.draw()
     
     win.flip()
