@@ -1,3 +1,4 @@
+from __future__ import division
 from psychopy import core
 from psychopy import visual
 from psychopy import monitors
