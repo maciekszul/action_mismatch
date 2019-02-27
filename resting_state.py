@@ -167,7 +167,6 @@ instructions = [
     "c"
 ]
 
-
 for text in instructions:
     text_stim.text = text
     text_stim.draw()
@@ -191,8 +190,8 @@ win.flip()
 trigger(64, 0.005)
 
 event.waitKeys(
-    maxWait=2, 
-    keyList=["]"], 
+    maxWait=360, 
+    keyList=["p"], 
     modifiers=False, 
     timeStamped=False, 
     clearEvents=True
