@@ -12,6 +12,21 @@ import numpy as np
 import pandas as pd
 import misc
 
+try:
+    from pypixxlib.propixx import PROPixxCTRL
+    pxctrl = PROPixxCTRL()
+    px_out = pxctrl.dout
+
+except ImportError:
+    class dummy:
+        def setBitValue(self, value=0, bit_mask=0xFF):
+            pass
+
+        def updateRegisterCache(self):
+            pass
+    pxctrl = dummy()
+    px_out = dummy()
+
 # prompt
 exp_info = {
     "ID": 0,
@@ -47,6 +62,58 @@ data_filename = "ses{}_{}_{}.csv".format(
 
 joy_dir = op.join(subj_dir, data_filename[:-4])
 misc.mk_dir(joy_dir)
+
+# eyetracker setup
+
+iohub_tracker_class_path = 'eyetracker.hw.sr_research.eyelink.EyeTracker'
+eyetracker_config = dict()
+eyetracker_config['name'] = 'tracker'
+eyetracker_config['enable'] = True
+eyetracker_config['stream_events'] = False
+eyetracker_config['model_name'] = 'EYELINK 1000 TOWER'
+eyetracker_config['default_native_data_file_name'] = subj_ID
+eyetracker_config['simulation_mode'] = True
+eyetracker_config['runtime_settings'] = dict(sampling_rate=1000,
+                                             track_eyes='RIGHT')
+
+try:
+    from psychopy.iohub import launchHubServer
+
+    io = launchHubServer(**{iohub_tracker_class_path: eyetracker_config})
+
+    tracker = io.devices.tracker
+
+    r = tracker.runSetupProcedure()
+
+except:
+    class another_dummy():
+        def sendMessage(self, x):
+            pass
+        
+        def quit():
+            pass
+    
+    tracker = another_dummy()
+    io = another_dummy()
+
+def trigger(bit, t):
+    """
+    triggers ProPixxControl
+    returns trigger time, start and end of the function
+    """
+    start = core.getTime()
+    wait = core.StaticPeriod()
+    px_out.setBitValue(value=bit, bit_mask=0xFF)
+    pxctrl.updateRegisterCache()
+    wait.start(t)
+    tracker.sendMessage(str(bit))
+    trig = core.getTime()
+    wait.complete()
+    px_out.setBitValue(value=0, bit_mask=0xFF)
+    pxctrl.updateRegisterCache()
+    end = core.getTime()
+    return (trig, start, end)
+
 
 # exp settings
 background_color = "#c7c7c7"
@@ -85,6 +152,22 @@ bar_shape = [
 tbar_h = 1.7
 tbar_w = tbar_h/4
 tbar_shape = bar_shape
+
+# triggers
+obs_dict = {
+    1: 30,
+    -1: 40,
+    0: 50
+}
+
+rot_dict = {
+    1: 60,
+    -1: 70,
+    0: 80
+}
+
+# 90 end of the trial, beginning of ITI
+# 100 end of the ITI
 
 # monitor settings
 x230 = (28, 56, (1366, 768))
@@ -296,6 +379,8 @@ exp_sequence = misc.oddball_sequence(no_chunks, no_elem, prop_dev)
 
 
 # EXPERIMENT'
+trigger(0, 0.005)
+
 blank.draw()
 win.flip()
 core.wait(2)
@@ -304,7 +389,6 @@ exp_clock = clock.MonotonicClock()
 exp_start = exp_clock.getTime()
 for trial, stim_mode in enumerate(exp_sequence):
     exp_fix_onset = exp_clock.getTime()
-
     while True:
         x, y = joy.getX(), joy.getY()
         t, radius = ct.cart2pol(x, y, units="rad")
@@ -314,7 +398,7 @@ for trial, stim_mode in enumerate(exp_sequence):
         else:
             break
     
-    fix = clock.StaticPeriod(screenHz=framerate_r)
+    fix = core.StaticPeriod(screenHz=framerate_r)
     draw_cue()
     win.flip()
     fix.start(fix_time)
@@ -330,6 +414,9 @@ for trial, stim_mode in enumerate(exp_sequence):
     x_trial = [x]
     y_trial = [y]
     t_trial = [exp_rot_onset]
+
+    trigger(rot_dict[stim_mode], 0.005)
+    
     for frame in np.arange((framerate_r * rot_time)):
         x, y = joy.getX(), joy.getY()
         x_trial.append(x)
@@ -372,7 +459,7 @@ for trial, stim_mode in enumerate(exp_sequence):
         else:
             break
 
-    blink = clock.StaticPeriod(screenHz=framerate_r)
+    blink = core.StaticPeriod(screenHz=framerate_r)
     blink.start(blink_time)
     # operations during blink
     if stim_mode != 0:
@@ -386,7 +473,9 @@ for trial, stim_mode in enumerate(exp_sequence):
     blink.complete()
 
     exp_obs_onset = exp_clock.getTime()
-    
+
+    trigger(obs_dict[stim_mode], 0.005)
+
     if stim_mode != 0:
         win.flip()
 
@@ -409,8 +498,9 @@ for trial, stim_mode in enumerate(exp_sequence):
         win.flip()
     else:
         pass
+    trigger(90, 0.005)
     exp_iti_onset = exp_clock.getTime()
-    ITI = clock.StaticPeriod(screenHz=framerate_r)
+    ITI = core.StaticPeriod(screenHz=framerate_r)
     ITI_time = np.random.uniform(low=ITI_bounds[0], high=ITI_bounds[1])
     ITI.start(ITI_time)
     # operations during ITI
@@ -454,10 +544,13 @@ for trial, stim_mode in enumerate(exp_sequence):
     
     print(ITI.complete())
 
+    trigger(100, 0.005)
+
     if event.getKeys(keyList=['q'], timeStamped=False):
         break
         # win.close()
         # core.quit()
 
 win.close()
+io.quit()
 core.quit()
