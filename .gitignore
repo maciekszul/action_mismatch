@@ -4,6 +4,7 @@ data/
 *.csv
 *.pkl
 *.json
+.iopid/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
