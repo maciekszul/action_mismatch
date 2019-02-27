@@ -154,13 +154,13 @@ tbar_w = tbar_h/4
 tbar_shape = bar_shape
 
 # triggers
-obs_dict = {
+rot_dict = {
     1: 30,
     -1: 40,
     0: 50
 }
 
-rot_dict = {
+obs_dict = {
     1: 60,
     -1: 70,
     0: 80
