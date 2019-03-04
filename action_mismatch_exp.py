@@ -222,7 +222,9 @@ columns = [
     "rot_dur",
     "blink_dur",
     "obs_dur",
-    "ITI_dur"
+    "ITI_dur",
+    "trig_rot",
+    "trig_obs"
 ]
 
 data_dict = {i: [] for i in columns}
@@ -377,8 +379,30 @@ def draw_cue():
 
 exp_sequence = misc.oddball_sequence(no_chunks, no_elem, prop_dev)
 
+instructions = [
+    "a",
+    "b",
+    "c"
+]
 
-# EXPERIMENT'
+for text in instructions:
+    text_stim.text = text
+    text_stim.draw()
+    win.flip()
+    event.waitKeys(
+        maxWait=60, 
+        keyList=["space"], 
+        modifiers=False, 
+        timeStamped=False, 
+        clearEvents=True
+    )
+
+
+# EXPERIMENT
+
+tracker.setRecordingState(True)
+tracker.sendMessage("START")
+
 trigger(0, 0.005)
 
 blank.draw()
@@ -415,7 +439,7 @@ for trial, stim_mode in enumerate(exp_sequence):
     y_trial = [y]
     t_trial = [exp_rot_onset]
 
-    trigger(rot_dict[stim_mode], 0.005)
+    trig_rot, start, end = trigger(rot_dict[stim_mode], 0.005)
     
     for frame in np.arange((framerate_r * rot_time)):
         x, y = joy.getX(), joy.getY()
@@ -453,7 +477,7 @@ for trial, stim_mode in enumerate(exp_sequence):
     while True:
         x, y = joy.getX(), joy.getY()
         t, radius = ct.cart2pol(x, y, units="rad")
-        if radius > 0.1:
+        if radius > 0.2:
             blank.draw()
             win.flip()
         else:
@@ -474,7 +498,7 @@ for trial, stim_mode in enumerate(exp_sequence):
 
     exp_obs_onset = exp_clock.getTime()
 
-    trigger(obs_dict[stim_mode], 0.005)
+    trig_obs, start, end = trigger(obs_dict[stim_mode], 0.005)
 
     if stim_mode != 0:
         win.flip()
@@ -525,6 +549,9 @@ for trial, stim_mode in enumerate(exp_sequence):
     data_dict["obs_dur"].append(exp_iti_onset - exp_obs_onset)
     data_dict["ITI_dur"].append(ITI_time)
 
+    data_dict["trig_rot"].append(trig_rot)
+    data_dict["trig_obs"].append(trig_obs)
+
     data_DF = pd.DataFrame(data_dict)
     data_DF.to_csv(
         op.join(subj_dir, data_filename)
@@ -550,6 +577,10 @@ for trial, stim_mode in enumerate(exp_sequence):
         break
         # win.close()
         # core.quit()
+
+tracker.sendMessage("END")
+tracker.setRecordingState(False)
+tracker.setConnectionState(False)
 
 win.close()
 io.quit()
