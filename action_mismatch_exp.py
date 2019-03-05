@@ -116,19 +116,24 @@ def trigger(bit, t):
 
 
 # exp settings
-background_color = "#c7c7c7"
-exp_gray = "#c2c2c2"
-# exp_gray = "#b8b8b8"
+# background_color = "#c7c7c7"
+background_color = "#939393"
+
+# exp_gray = "#c2c2c2"
+exp_gray = "#848484"
 
 wedge_rad = [0, 90]
-wedge_size = 15
+wedge_size = 20
+
+rad_cyc = 4
+ang_cyc = 15
 
 fix_time = 0.5
 rot_time = 1.5
 blink_time = 0.1
 obs_time = 1
 
-flickering_freq = 8
+flickering_freq = 16
 
 ITI_bounds = (0.5, 0.9)
 
@@ -192,7 +197,7 @@ win = visual.Window(
 
 framerate = win.getActualFrameRate(
     nIdentical=10,
-    nMaxFrames=60,
+    nMaxFrames=120,
     nWarmUpFrames=10,
     threshold=1
 )
@@ -290,8 +295,8 @@ try:
         color=1, 
         size=wedge_size,
         visibleWedge=[0,360], 
-        radialCycles=8, 
-        angularCycles=30, 
+        radialCycles=rad_cyc, 
+        angularCycles=ang_cyc, 
         interpolate=False,
         autoLog=False
     )
@@ -302,8 +307,8 @@ try:
         color=-1, 
         size=wedge_size,
         visibleWedge=[0,360], 
-        radialCycles=8, 
-        angularCycles=30, 
+        radialCycles=rad_cyc, 
+        angularCycles=ang_cyc, 
         interpolate=False,
         autoLog=False
     )
@@ -377,12 +382,26 @@ def draw_cue():
     line2.draw()
     circle1.draw()
 
+text_stim = visual.TextStim(
+    win,
+    text="",
+    height=1,
+    color="black",
+    pos=(0, 0),
+    alignHoriz="center"
+)
+
+# x, 15, 26%
+
 exp_sequence = misc.oddball_sequence(no_chunks, no_elem, prop_dev)
 
 instructions = [
-    "a",
-    "b",
-    "c"
+    "Your task is to perform a circular movement (clockwise or anti-clockwise) within a designated time.\n\nTime is indicated by the red time bar in the center of the screen.",
+    "Initiate it with an upward movement.\n\nMaintain the speed during the trial.\n\nCenter the joystick before the end of te time",
+    "After the movement, observe the motion of the visual object.\n\nCount how many times the motion was different to the motion you performed."
+    "Try to sit still during the trial.",
+    "Head position measurement. Try to sit still.",
+    "Experiment is starting after this message disappears."
 ]
 
 for text in instructions:
@@ -393,10 +412,8 @@ for text in instructions:
         maxWait=60, 
         keyList=["space"], 
         modifiers=False, 
-        timeStamped=False, 
-        clearEvents=True
+        timeStamped=False
     )
-
 
 # EXPERIMENT
 
@@ -407,7 +424,7 @@ trigger(0, 0.005)
 
 blank.draw()
 win.flip()
-core.wait(2)
+core.wait(5)
 
 exp_clock = clock.MonotonicClock()
 exp_start = exp_clock.getTime()
@@ -416,7 +433,7 @@ for trial, stim_mode in enumerate(exp_sequence):
     while True:
         x, y = joy.getX(), joy.getY()
         t, radius = ct.cart2pol(x, y, units="rad")
-        if radius > 0.1:
+        if radius > 0.2:
             blank.draw()
             win.flip()
         else:
@@ -577,6 +594,25 @@ for trial, stim_mode in enumerate(exp_sequence):
         break
         # win.close()
         # core.quit()
+
+blank.draw()
+win.flip()
+core.wait(2)
+
+instructions = [
+    "End of the experiment"
+]
+
+for text in instructions:
+    text_stim.text = text
+    text_stim.draw()
+    win.flip()
+    event.waitKeys(
+        maxWait=60, 
+        keyList=["space"], 
+        modifiers=False, 
+        timeStamped=False
+    )
 
 tracker.sendMessage("END")
 tracker.setRecordingState(False)
